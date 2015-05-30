@@ -12,6 +12,7 @@ function validateFiles(files) {
 		.pipe($.jshint.reporter(require('jshint-stylish')))
 		.pipe($.jshint.reporter('fail'))
 		.pipe($.jscs())
+		.pipe($.filter(['*', '!test/*']))
 		.pipe($.istanbul()) // Covering files
 		.pipe($.istanbul.hookRequire()) // Force `require` to return covered files
 		.on('finish', function () {
