@@ -20,3 +20,5 @@ read username
 sed "s/%USERNAME%/$username/g" -i readme.md
 
 npm init
+
+mv git-pre-commit-hook .git/hooks/pre-commit
