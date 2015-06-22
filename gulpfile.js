@@ -41,20 +41,26 @@ function testAndCoverage(lcovOnly) {
 	);
 }
 
-function validateFiles(files, lcovOnly) {
-	return promisifyStream(
-		gulp.src(files)
-		.pipe($.jshint())
-		.pipe($.jshint.reporter(require('jshint-stylish')))
-		.pipe($.jshint.reporter('fail'))
-		.pipe($.jscs())
-		.pipe($.filter(['*', '!test/*']))
+function validateFiles(files, simple, lcovOnly) {
+
+	var stream = gulp.src(files)
+	.pipe($.jshint())
+	.pipe($.jshint.reporter(require('jshint-stylish')))
+	.pipe($.jshint.reporter('fail'))
+	.pipe($.jscs());
+	if (!simple) {
+		stream = stream.pipe($.filter(['*', '!test/*']))
 		.pipe($.istanbul())
-		.pipe($.istanbul.hookRequire())
-	)
-	.then(function() {
-		return testAndCoverage(lcovOnly);
-	});
+		.pipe($.istanbul.hookRequire());
+	}
+
+	var retPromise = promisifyStream(stream);
+	if (!simple) {
+		return retPromise.then(function() {
+			return testAndCoverage(lcovOnly);
+		});
+	}
+	return retPromise;
 }
 
 var files = [
@@ -65,12 +71,16 @@ var files = [
 ];
 
 gulp.task('default', function() {
+	if (process.env.TRAVIS) {
+		return validateFiles(files, false, true);
+	}
 	return validateFiles(files);
 });
 
-gulp.task('travis', function() {
-	return validateFiles(files, true)
-	.then(coveralls);
+gulp.task('simple', function() {
+	return validateFiles(files, true);
 });
+
+gulp.task('coveralls', coveralls);
 
 gulp.task('git-pre-commit', ['default']);
